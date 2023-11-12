@@ -24,7 +24,7 @@
 #******************************************************************************
 
 import logging
-import rpi_ws281x
+from zyncoder.zyncore import lib_zyncore
 
 # Zynthian specific modules
 from zyngui import zynthian_gui_config
@@ -41,6 +41,7 @@ class zynthian_wsleds_base:
 		self.pin = None
 		self.chan = None
 		self.wsleds = None
+		self.i2cAddr = 0x40
 		self.num_leds = 0
 		self.blink_count = 0
 		self.blink_state = False
@@ -77,10 +78,10 @@ class zynthian_wsleds_base:
 			str(self.wscolor_yellow): "Y",
 			str(self.wscolor_purple): "P"
 		}
-
+		self.listPixels=[str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off),str(self.wscolor_off)]
 
 	def create_color(self, r, g, b):
-		return rpi_ws281x.Color(int(self.brightness * r), int(self.brightness * g), int(self.brightness * b))
+		return [int(self.brightness * r), int(self.brightness * g), int(self.brightness * b)]
 
 
 	def set_brightness(self, brightness):
@@ -99,9 +100,9 @@ class zynthian_wsleds_base:
 
 	def start(self):
 		if self.num_leds > 0 and self.pin is not None:
-			self.wsleds = rpi_ws281x.PixelStrip(self.num_leds, self.pin, dma=self.dma, channel=self.chan,
-												strip_type=rpi_ws281x.ws.WS2811_STRIP_GRB)
-			self.wsleds.begin()
+			self.wsleds = 0
+			for i in range(0, self.num_leds):
+				self.listPixels.append(str(self.wscolor_off))
 			self.light_on_all()
 
 
@@ -114,44 +115,46 @@ class zynthian_wsleds_base:
 
 
 	def setPixelColor(self, i , wscolor):
-		self.wsleds.setPixelColor(i, wscolor)
+		lib_zyncore.set_led(i, wscolor[0], wscolor[1], wscolor[2])
+		self.listPixels[i] = str(wscolor)
 
 
 	def light_on_all(self):
 		if self.num_leds > 0:
 			# Light all LEDs
+			lib_zyncore.set_all_leds(self.wscolor_default[0], self.wscolor_default[1], self.wscolor_default[2])
 			for i in range(0, self.num_leds):
-				self.wsleds.setPixelColor(i, self.wscolor_default)
-			self.wsleds.show()
+				self.listPixels[i] = str(self.wscolor_default)
 
 
 	def light_off_all(self):
 		if self.num_leds > 0:
 			# Light-off all LEDs
+			lib_zyncore.reset_all_leds()
 			for i in range(0, self.num_leds):
-				self.wsleds.setPixelColor(i, self.wscolor_off)
-			self.wsleds.show()
+				self.listPixels[i] = str(self.wscolor_off)
+
 
 
 	def blink(self, i, color):
 		if self.blink_state:
-			self.wsleds.setPixelColor(i, color)
+			self.setPixelColor(i, color)
 		else:
-			self.wsleds.setPixelColor(i, self.wscolor_off)
+			self.setPixelColor(i, self.wscolor_off)
 
 
 	def pulse(self, i):
 		if self.blink_state:
-			color = rpi_ws281x.Color(0, int(self.brightness * self.pulse_step * 6), 0)
+			color = self.create_color(0, int(self.brightness * self.pulse_step * 6), 0)
 			self.pulse_step += 1
 		elif self.pulse_step > 0:
-			color = rpi_ws281x.Color(0, int(self.brightness * self.pulse_step * 6), 0)
+			color = self.create_color(0, int(self.brightness * self.pulse_step * 6), 0)
 			self.pulse_step -= 1
 		else:
 			color = self.wscolor_off
 			self.pulse_step = 0
 
-		self.wsleds.setPixelColor(i, color)
+		self.setPixelColor(i, color)
 
 	def update(self):
 		# Power Save Mode
@@ -160,10 +163,8 @@ class zynthian_wsleds_base:
 				self.blink_state = True
 			else:
 				self.blink_state = False
-			for i in range(0, self.num_leds):
-				self.wsleds.setPixelColor(i, self.wscolor_off)
+			self.light_off_all
 			self.pulse(0)
-			self.wsleds.show()
 
 		# Normal mode
 		else:
@@ -177,13 +178,12 @@ class zynthian_wsleds_base:
 			except Exception as e:
 				logging.error(e)
 
-			self.wsleds.show()
 
 			if self.zyngui.capture_log_fname:
 				try:
 					wsled_state = []
 					for i in range(self.num_leds):
-						c = str(self.wsleds.getPixelColor(i))
+						c = self.listPixels[i]
 						if c in self.wscolors_dict:
 							wsled_state.append(self.wscolors_dict[c])
 					wsled_state = ",".join(wsled_state)

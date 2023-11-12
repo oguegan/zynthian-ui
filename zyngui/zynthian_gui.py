@@ -197,7 +197,7 @@ class zynthian_gui:
 
 		# Initialize SOC sensors monitoring
 		try:
-			self.hwmon_thermal_file = open('/sys/class/hwmon/hwmon0/temp1_input')
+			self.hwmon_thermal_file = open('/sys/class/hwmon/hwmon2/temp1_input')
 			self.hwmon_undervolt_file = open('/sys/class/hwmon/hwmon1/in0_lcrit_alarm')
 			self.overtemp_warning = 75.0
 			self.get_throttled_file = None
@@ -276,7 +276,7 @@ class zynthian_gui:
 			from zyngui.zynthian_wsleds_z2 import zynthian_wsleds_z2
 			self.wsleds = zynthian_wsleds_z2(self)
 			self.wsleds.start()
-		elif zynthian_gui_config.check_wiring_layout(["V5"]):
+		elif zynthian_gui_config.check_wiring_layout(["V5", "KB"]):
 			from zyngui.zynthian_wsleds_v5 import zynthian_wsleds_v5
 			self.wsleds = zynthian_wsleds_v5(self)
 			self.wsleds.start()
@@ -538,7 +538,7 @@ class zynthian_gui:
 		self.screens['audio_mixer'] = zynthian_gui_mixer()
 
 		# Create the right main menu screen
-		if zynthian_gui_config.check_wiring_layout(["Z2", "V5"]):
+		if zynthian_gui_config.check_wiring_layout(["Z2", "V5", "KB"]):
 			self.screens['main_menu'] = zynthian_gui_chain_menu()
 		else:
 			self.screens['main_menu'] = zynthian_gui_main_menu()

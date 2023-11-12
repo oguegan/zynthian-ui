@@ -79,7 +79,7 @@ def check_wiring_layout(wls):
 gui_layout = os.environ.get('ZYNTHIAN_UI_GRAPHIC_LAYOUT', '')
 
 if not gui_layout:
-	if check_wiring_layout(["Z2", "V5"]):
+	if check_wiring_layout(["Z2", "V5", "KB"]):
 		gui_layout = "Z2"
 	else:
 		gui_layout = "V4"
@@ -497,7 +497,7 @@ enable_touch_widgets = int(os.environ.get('ZYNTHIAN_UI_TOUCH_WIDGETS', False))
 enable_onscreen_buttons = int(os.environ.get('ZYNTHIAN_UI_ONSCREEN_BUTTONS', False))
 force_enable_cursor = int(os.environ.get('ZYNTHIAN_UI_ENABLE_CURSOR', False))
 
-if enable_onscreen_buttons or check_wiring_layout(["Z2", "V5"]):
+if enable_onscreen_buttons or check_wiring_layout(["Z2", "V5", "KB"]):
 	enable_touch_controller_switches = 0
 else:
 	enable_touch_controller_switches = 1
